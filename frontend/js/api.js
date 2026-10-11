@@ -3,7 +3,7 @@
  * Interfaces with FastAPI backend (Section 15 API contracts).
  */
 
-const API_BASE = window.location.origin.includes('8000') ? '/api' : 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 const api = {
   isBackendConnected: false,
