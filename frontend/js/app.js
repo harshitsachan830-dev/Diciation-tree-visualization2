@@ -173,6 +173,13 @@ function updateDatasetUI(meta) {
   // Update Target Select options
   const targetSelect = document.getElementById('targetColumnSelect');
   if (targetSelect && meta.columns) {
+    targetSelect.replaceChildren(...meta.columns.map(column => {
+      const option = document.createElement('option');
+      option.value = column;
+      option.textContent = column;
+      return option;
+    }));
+
     // Smart auto-selection of Target Column
     const candidateNames = ['target', 'label', 'class', 'status', 'approved', 'loan_status', 'loan_approved', 'churn', 'outcome', 'default', 'y', 'species', 'survived', 'price_k', 'price', 'medv'];
     let selectedCol = meta.columns.find(c => candidateNames.includes(c.toLowerCase()));

@@ -83,3 +83,15 @@ python3 backend/test_backend.py
 
 ### Option 3: Open Directly in Browser
 You can also directly double-click or open `index.html` in any modern web browser (`file:///Users/harshit9793/Decition%20tree/index.html`).
+
+### Deploy to Render
+This repository includes a `render.yaml` Blueprint for deploying the FastAPI backend and frontend as one web service.
+
+1. Push the project, including `render.yaml`, to your GitHub repository.
+2. Sign in to [Render](https://dashboard.render.com/) and choose **New** → **Blueprint**.
+3. Connect your GitHub account if prompted, then select `harshitsachan830-dev/Diciation-tree-visualization2`.
+4. Review the Blueprint service `decision-tree-studio` and click **Apply**. Render installs the packages from `requirements.txt` and starts the app using the configured command.
+5. Wait for the first deploy to finish, then open the `onrender.com` URL shown on the service page. The health check at `/api/health` should report a healthy service.
+6. To publish later changes, push them to the connected branch; Render will deploy them automatically.
+
+The configured free service can spin down when idle, so the first request after a quiet period may take longer. Uploaded datasets and trained models are held in memory and are not durable; restarting or redeploying the service clears them.
