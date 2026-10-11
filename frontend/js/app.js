@@ -173,11 +173,17 @@ function updateDatasetUI(meta) {
   // Update Target Select options
   const targetSelect = document.getElementById('targetColumnSelect');
   if (targetSelect && meta.columns) {
-    targetSelect.innerHTML = meta.columns.map(c => `<option value="${c}">${c}</option>`).join('');
-    // Auto-select smart target
-    if (meta.columns.includes('species')) targetSelect.value = 'species';
-    else if (meta.columns.includes('survived')) targetSelect.value = 'survived';
-    else if (meta.columns.includes('price_k')) targetSelect.value = 'price_k';
+    // Smart auto-selection of Target Column
+    const candidateNames = ['target', 'label', 'class', 'status', 'approved', 'loan_status', 'loan_approved', 'churn', 'outcome', 'default', 'y', 'species', 'survived', 'price_k', 'price', 'medv'];
+    let selectedCol = meta.columns.find(c => candidateNames.includes(c.toLowerCase()));
+    
+    // If no candidate name matched, pick the LAST column (standard in CSV datasets), avoiding obvious ID columns
+    if (!selectedCol && meta.columns.length > 0) {
+      const nonIdCols = meta.columns.filter(c => !/(^id$|_id$|^id_|^uuid$|^index$)/i.test(c));
+      selectedCol = nonIdCols.length > 0 ? nonIdCols[nonIdCols.length - 1] : meta.columns[meta.columns.length - 1];
+    }
+    
+    if (selectedCol) targetSelect.value = selectedCol;
   }
 
   // Update Task (classification vs regression)
@@ -282,7 +288,12 @@ async function trainModel() {
     if (activeTab === 'tabEval') loadEvaluationMetrics(res.metrics);
 
   } catch (err) {
-    alert('Failed to train model: ' + err.message);
+    let msg = err.message;
+    try {
+      const parsed = JSON.parse(msg);
+      if (parsed.detail) msg = parsed.detail;
+    } catch(e) {}
+    alert('Training Notice: ' + msg);
   }
 }
 

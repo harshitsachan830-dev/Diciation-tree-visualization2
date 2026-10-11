@@ -107,8 +107,26 @@ def train_decision_tree(
         prec = float(precision_score(y_test, y_pred_test, average="weighted", zero_division=0))
         rec = float(recall_score(y_test, y_pred_test, average="weighted", zero_division=0))
         f1 = float(f1_score(y_test, y_pred_test, average="weighted", zero_division=0))
-        cm = confusion_matrix(y_test, y_pred_test).tolist()
-        cr = classification_report(y_test, y_pred_test, target_names=class_names, output_dict=True, zero_division=0)
+        labels_all = list(range(len(class_names)))
+        try:
+            cm = confusion_matrix(y_test, y_pred_test, labels=labels_all).tolist()
+        except Exception:
+            cm = confusion_matrix(y_test, y_pred_test).tolist()
+
+        try:
+            cr = classification_report(
+                y_test, y_pred_test,
+                labels=labels_all,
+                target_names=class_names,
+                output_dict=True,
+                zero_division=0
+            )
+        except Exception:
+            cr = classification_report(
+                y_test, y_pred_test,
+                output_dict=True,
+                zero_division=0
+            )
         
         metrics = {
             "task": "classification",
