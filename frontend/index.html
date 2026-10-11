@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Model Mind — Decision Tree Visualization Studio</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <circle cx="12" cy="5" r="3"/>
+          <circle cx="6" cy="19" r="3"/>
+          <circle cx="18" cy="19" r="3"/>
+          <path d="M12 8v4M12 12l-4 4M12 12l4 4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">Model Mind <span class="brand-badge">Decision Tree Studio</span></div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="api-status-badge">
+        <span id="apiDot" class="api-dot"></span>
+        <span id="apiStatusText">Checking Backend...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Work Area -->
+  <div class="main-layout">
+
+    <!-- Left Controls Sidebar -->
+    <aside class="sidebar">
+      
+      <!-- 1. Dataset Selection & Upload -->
+      <div class="sidebar-section">
+        <div class="sidebar-heading">
+          <span>Dataset Source</span>
+          <span style="font-size:0.7rem; color:var(--accent-emerald);">CSV Ready</span>
+        </div>
+
+        <div class="file-upload-zone" onclick="document.getElementById('csvFileInput').click()">
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto 6px; color:var(--text-muted); display:block;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <div style="font-size:0.8rem; font-weight:600;">Upload CSV File</div>
+          <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">Custom dataset with missing values</div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label style="font-size:0.75rem;">Or Choose Benchmark Demo:</label>
+          <div class="demo-chips">
+            <button class="chip active" data-dataset="iris">Iris</button>
+            <button class="chip" data-dataset="titanic">Titanic (Missing Values)</button>
+            <button class="chip" data-dataset="housing">Housing (Regression)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Missing Values Notification Alert -->
+      <div id="missingAlertContainer" style="padding: 12px 20px 0; display:none;"></div>
+
+      <!-- 2. Missing Value Imputation Panel -->
+      <div class="sidebar-section">
+        <div class="sidebar-heading">
+          <span>Missing Values Imputation</span>
+          <span style="font-size:0.7rem; color:var(--accent-amber);">Imputer</span>
+        </div>
+
+        <div class="form-group">
+          <label>Imputation Strategy</label>
+          <select id="imputeStrategySelect">
+            <option value="mean">Mean (Fill with column mean)</option>
+            <option value="median">Median (Fill with column median)</option>
+            <option value="mode">Mode (Most frequent value)</option>
+            <option value="drop">Drop Rows (Remove rows with NaN)</option>
+          </select>
+        </div>
+
+        <button id="btnApplyImpute" class="btn btn-secondary">
+          <span>✨ Apply Missing Value Fill</span>
+        </button>
+      </div>
+
+      <!-- 3. Feature Scaling Panel -->
+      <div class="sidebar-section">
+        <div class="sidebar-heading">
+          <span>Feature Scaling</span>
+          <span style="font-size:0.7rem; color:var(--accent-cyan);">Transform</span>
+        </div>
+
+        <div class="form-group">
+          <label>Scaling Method</label>
+          <select id="scaleMethodSelect">
+            <option value="standard">StandardScaler (Z-Score: mean=0, std=1)</option>
+            <option value="minmax">MinMaxScaler (Normalized to [0, 1])</option>
+            <option value="robust">RobustScaler (IQR outlier-resistant)</option>
+          </select>
+        </div>
+
+        <button id="btnApplyScale" class="btn btn-secondary">
+          <span>📐 Apply Feature Scaling</span>
+        </button>
+      </div>
+
+      <!-- 4. Tree Hyperparameters -->
+      <div class="sidebar-section">
+        <div class="sidebar-heading">
+          <span>Tree Parameters</span>
+          <span style="font-size:0.7rem; color:var(--text-muted);">scikit-learn</span>
+        </div>
+
+        <div class="form-group">
+          <label>Target Column</label>
+          <select id="targetColumnSelect"></select>
+        </div>
+
+        <div class="form-group">
+          <label>Learning Task</label>
+          <select id="taskSelect">
+            <option value="classification">Classification</option>
+            <option value="regression">Regression</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Split Criterion</label>
+          <select id="criterionSelect">
+            <option value="gini">Gini Impurity</option>
+            <option value="entropy">Entropy (Information Gain)</option>
+            <option value="squared_error">Squared Error (MSE)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label>Max Depth</label>
+            <input type="number" id="maxDepthInput" value="5" min="1" max="20" />
+          </div>
+          <div>
+            <label>Min Split</label>
+            <input type="number" id="minSamplesSplitInput" value="2" min="2" max="50" />
+          </div>
+        </div>
+
+        <button id="btnTrain" class="btn btn-primary" style="margin-top:14px;">
+          <span>⚡ Train Decision Tree</span>
+        </button>
+      </div>
+
+      <!-- 5. Data Preview Accordion -->
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Data Table Preview</div>
+        <div id="tablePreviewContainer" style="overflow-x:auto;"></div>
+      </div>
+
+    </aside>
+
+    <!-- Center Stage -->
+    <main class="stage">
+
+      <!-- Top 5 KPI Cards -->
+      <div class="kpi-bar">
+        <div class="kpi-card">
+          <div class="kpi-title">TOTAL NODES</div>
+          <div id="kpiNodes" class="kpi-value">—</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-title">LEAF NODES</div>
+          <div id="kpiLeaves" class="kpi-value">—</div>
+        </div>
+        <div class="kpi-card cyan">
+          <div class="kpi-title">TREE DEPTH</div>
+          <div id="kpiDepth" class="kpi-value">—</div>
+        </div>
+        <div class="kpi-card amber">
+          <div id="kpiPurityTitle" class="kpi-title">TEST ACCURACY</div>
+          <div id="kpiPurity" class="kpi-value">—</div>
+        </div>
+        <div class="kpi-card">
+          <div id="kpiAccuracyTitle" class="kpi-title">WEIGHTED F1</div>
+          <div id="kpiAccuracy" class="kpi-value">—</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tabTree">🌲 Tree Explorer</button>
+        <button class="tab-btn" data-tab="tab2D">📊 2D Decision Boundaries</button>
+        <button class="tab-btn" data-tab="tab3D">🧊 3D Feature Space</button>
+        <button class="tab-btn" data-tab="tabPredict">🎯 Prediction Explorer</button>
+        <button class="tab-btn" data-tab="tabEval">📈 Evaluation & Importance</button>
+        <button class="tab-btn" data-tab="tabRules">📜 IF-THEN Rules</button>
+        <button class="tab-btn" data-tab="tabReport">📋 Implementation Report PRD</button>
+      </div>
+
+      <!-- Tab 1: Interactive SVG Decision Tree -->
+      <div id="tabTree" class="tab-content active" style="flex-direction:row;">
+        <div class="tree-container">
+          <div class="canvas-controls">
+            <button class="icon-btn" onclick="treeRenderer.zoom(1.2)" title="Zoom In">+</button>
+            <button class="icon-btn" onclick="treeRenderer.zoom(0.8)" title="Zoom Out">−</button>
+            <button class="icon-btn" onclick="treeRenderer.fitTree()" title="Fit Tree to View">⊡</button>
+          </div>
+          <svg id="treeSvg"></svg>
+        </div>
+        <aside id="nodeInspector" class="inspector">
+          <div class="inspector-title"><span>Node Details</span><span class="brand-badge">Select a Node</span></div>
+          <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">Click any decision or leaf node in the tree diagram to inspect all 12 mathematical properties.</p>
+        </aside>
+      </div>
+
+      <!-- Tab 2: 2D Decision Boundaries -->
+      <div id="tab2D" class="tab-content">
+        <div class="chart-fullscreen">
+          <div class="chart-card">
+            <div id="chart2DContainer" style="width:100%; height:620px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: 3D Feature Space -->
+      <div id="tab3D" class="tab-content">
+        <div class="chart-fullscreen">
+          <div class="chart-card">
+            <div id="chart3DContainer" style="width:100%; height:640px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Prediction Explorer -->
+      <div id="tabPredict" class="tab-content">
+        <div class="chart-fullscreen" style="display:grid; grid-template-columns:360px 1fr; gap:20px;">
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">Test Sample Input</div></div>
+            <div id="predictionInputsContainer"></div>
+            <button id="btnPredict" class="btn btn-amber" style="margin-top:14px;">
+              <span>⚡ Trace Prediction Path</span>
+            </button>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">Real-Time Prediction & Breadcrumb Path</div></div>
+            <div id="predictionResultDisplay">
+              <p style="color:var(--text-muted); font-size:0.85rem;">Click 'Trace Prediction Path' to evaluate a sample across the decision tree and highlight the golden animated trajectory.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Evaluation & Importance -->
+      <div id="tabEval" class="tab-content">
+        <div class="chart-fullscreen" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="chart-card">
+            <div id="cmChartContainer" style="width:100%; height:450px;"></div>
+          </div>
+          <div class="chart-card">
+            <div id="importanceChart" style="width:100%; height:450px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 6: IF-THEN Rules -->
+      <div id="tabRules" class="tab-content">
+        <div class="chart-fullscreen">
+          <div class="chart-card">
+            <div class="chart-header"><div class="chart-title">Human-Readable Decision Rules</div></div>
+            <div id="rulesListContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 7: Implementation Report PRD -->
+      <div id="tabReport" class="tab-content">
+        <div class="chart-fullscreen">
+          <div id="reportViewerContainer"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/tree_renderer.js"></script>
+  <script src="/static/js/charts.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
