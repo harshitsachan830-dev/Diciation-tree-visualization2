@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { API_BASE_URL } from "./api.js";
 
 const MODELS = [
   { value: "decision_tree", label: "Decision Tree" },
@@ -127,7 +128,7 @@ export default function P3Lab({ file, target }) {
       formData.append("file", file);
 
       const url =
-        `http://127.0.0.1:8000/p3/analyze` +
+        `${API_BASE_URL}/p3/analyze` +
         `?target=${encodeURIComponent(target)}` +
         `&model_name=${encodeURIComponent(model)}`;
 
