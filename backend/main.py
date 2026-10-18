@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 import pandas as pd
 import numpy as np
@@ -29,6 +31,8 @@ from sklearn.metrics import (
 app = FastAPI(
     title="ModelMind ML Visualization API"
 )
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
 
 
 # Stores the latest trained model and preprocessing state.
@@ -53,10 +57,18 @@ app.add_middleware(
 
 @app.get("/")
 def root():
+    index_file = FRONTEND_DIST / "index.html"
+    if index_file.is_file():
+        return FileResponse(index_file)
     return {
         "message": "ModelMind ML Visualization API is running",
         "status": "ok",
     }
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.get("/sample-dataset")
@@ -1697,3 +1709,8 @@ async def p3_analyze(
             status_code=500,
             detail=f"P3 analysis failed: {str(exc)}"
         )
+
+
+assets_dir = FRONTEND_DIST / "assets"
+if assets_dir.is_dir():
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
